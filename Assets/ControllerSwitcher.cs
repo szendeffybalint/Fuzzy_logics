@@ -32,7 +32,7 @@ public class ControllerSwitcher : MonoBehaviour
     {
         m_gameobject.GetComponent<NavMeshAgent>().enabled = false;
         m_gameobject.GetComponent<MobaController>().enabled = false;
-        m_gameobject.GetComponent<CapsuleCollider>().enabled = false;
+        //m_gameobject.GetComponent<CapsuleCollider>().enabled = false;
         m_gameobject.GetComponent<FirstPersonController>().enabled = true;
         m_gameobject.GetComponent<CharacterController>().enabled = true;
         cam.transform.position = Eyes.transform.position; 
@@ -46,7 +46,7 @@ public class ControllerSwitcher : MonoBehaviour
         m_gameobject.GetComponent<CharacterController>().enabled = false;
         m_gameobject.GetComponent<NavMeshAgent>().enabled = true;
         m_gameobject.GetComponent<MobaController>().enabled = true;
-        m_gameobject.GetComponent<CapsuleCollider>().enabled = true;
+       // m_gameobject.GetComponent<CapsuleCollider>().enabled = true;
         cam.transform.localPosition = new Vector3(0.0f, 25.0f, -5.0f);
         cam.transform.localRotation = Quaternion.Euler(80f, 0, 0);
         m_Isfps = false;

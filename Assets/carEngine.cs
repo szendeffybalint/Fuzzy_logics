@@ -19,6 +19,11 @@ public class carEngine : MonoBehaviour
     private GameObject[] People;
     private GameObject[] Cars;
     private bool isStop = false;
+    private enum GameObjectsToCollide
+    {
+        People,
+        Cars
+    }
     [SerializeField]float maxPeopleRange = 100f;
     [SerializeField]float maxCarsRange = 100f;
     void Start()
@@ -34,17 +39,21 @@ public class carEngine : MonoBehaviour
 
     void FixedUpdate()
     {
+        //wheels of car 
         ApplySteer();
         
         //if needed
+        //set the cars speed 
         CheckAndGoNextWaypoint();
 
         //if needed
         CheckCarsAndPeople();
 
+        //if ppl / car 
         if (isStop)
             Brake();
 
+        //drive with the speed
         if(!isStop)
             Drive();
         //
@@ -52,28 +61,68 @@ public class carEngine : MonoBehaviour
 
     private void CheckCarsAndPeople()
     {
-        if (checkcars() || checkpeople())
+        if (checkobjects(GameObjectsToCollide.Cars) || checkobjects(GameObjectsToCollide.People))
             isStop = true;
-
         else
             isStop = false;
+    }
+
+    private bool checkobjects(GameObjectsToCollide objecttype)
+    {
+        GameObject[] Objectstocheck;
+        switch (objecttype)
+        {   
+            case GameObjectsToCollide.People:
+                Objectstocheck = People;
+                break;
+            case GameObjectsToCollide.Cars:
+                Objectstocheck = Cars;
+                break;
+            default:
+                Objectstocheck = new GameObject[0];
+                break;
+        }
+        foreach (var Gameobj in Objectstocheck)
+        {
+            
+            if (Gameobj == this.gameObject)
+                continue;
+            //Debug.Log(Vector3.Distance(transform.position, Gameobj.transform.position) + " at: " + Gameobj.name);
+            if (Vector3.Distance(transform.position, Gameobj.transform.position) <= maxPeopleRange)
+            {
+                Vector3 directionToGo = (nodes[currentNode].transform.position - transform.position);
+                Vector3 directionToTarget = (Gameobj.transform.position - transform.position);
+                float angle = Vector3.Angle(directionToGo, directionToTarget);
+                float distance = directionToTarget.magnitude;
+                float maxangle = getangle(distance);
+                //Debug.Log(angle + " at: " + Gameobj.name);
+                if (Mathf.Abs(angle) < maxangle)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    private float getangle(float distance)
+    {
+        //distance is needed cuz angle will be obviusly bigger if object is almsot next to us
+        return 15;
     }
 
     private bool checkpeople()
     {
         foreach (var person in People)
-        { 
-            if (Vector3.Distance(transform.position, person.transform.position) < maxPeopleRange)
+        {
+            if (Vector3.Distance(transform.position, person.transform.position) <= maxPeopleRange)
             {
-                Vector3 direction = (nodes[currentNode].transform.position - transform.position);
-                Vector3 direction2 = (person.transform.position - transform.position);
-                Ray rayToNode = new Ray(transform.position, direction);
-                Debug.DrawRay(transform.position, nodes[currentNode].transform.position-transform.position,Color.red);
-                Debug.DrawRay(transform.position, direction, Color.red);
-                RaycastHit hit = new RaycastHit();
-                if (Physics.Raycast(rayToNode, out hit))
-                    if (hit.collider.gameObject.tag == "Person")
-                        return true;
+                Vector3 directionToGo = (nodes[currentNode].transform.position - transform.position);
+                Vector3 directionToTarget = (person.transform.position - transform.position);
+                float angle = Vector3.Angle(directionToGo, directionToTarget);
+                float distance = directionToTarget.magnitude;
+                float maxangle = getangle(distance);
+                //Debug.Log(angle);
+                if (Mathf.Abs(angle) < maxangle)
+                    return true;
             }
         }
         return false;
@@ -83,17 +132,19 @@ public class carEngine : MonoBehaviour
     {
         foreach (var car in Cars)
         {
+            if (car == this.gameObject)
+                continue;
             if (Vector3.Distance(transform.position, car.transform.position) < maxCarsRange)
             {
-                Vector3 direction = (nodes[currentNode].transform.position - transform.position);
-                Vector3 direction2 = (car.transform.position - transform.position);
-                Ray rayToNode = new Ray(transform.position, direction);
-                Debug.DrawRay(transform.position, nodes[currentNode].transform.position - transform.position, Color.red);
-                Debug.DrawRay(transform.position, direction, Color.red);
-                RaycastHit hit = new RaycastHit();
-                if (Physics.Raycast(rayToNode, out hit))
-                    if (hit.collider.gameObject.tag == "Car")
-                        return true;
+
+                Vector3 directionToGo = (nodes[currentNode].transform.position - transform.position);
+                Vector3 directionToTarget = (car.transform.position - transform.position);
+                float angle = Vector3.Angle(directionToGo, directionToTarget);
+                float distance = directionToTarget.magnitude;
+                float maxangle = getangle(distance);
+                // Debug.Log(angle);
+                if (Mathf.Abs(angle) < maxangle)
+                    return true;
             }
         }
         return false;
@@ -101,9 +152,10 @@ public class carEngine : MonoBehaviour
 
     private void Brake()
     {
+        //Debug.Log("Brake");
         if (LeftWheel.motorTorque > 0)
         {
-            slowDown(10);
+            slowDown(1);
         }
         else
         {
@@ -115,16 +167,17 @@ public class carEngine : MonoBehaviour
 
     private void Drive()
     {
+       // Debug.Log("Brake");
         float speed = this.GetComponent<Rigidbody>().velocity.sqrMagnitude;
         if (speed < m_VehicleMaxSpeed)
         {
             speedUP();
         }
-        else if (speed > VehicleMaxSpeedHolder && isGoingToTurn)
+        else if (speed > m_VehicleMaxSpeed && isGoingToTurn)
         {
             slowDown(5);
         }
-       // Debug.Log(speed);
+        //Debug.Log(speed);
     }
 
     private void slowDown(int FramesToStop)
@@ -156,12 +209,12 @@ public class carEngine : MonoBehaviour
             else
                 currentNode++;
             //Debug.Log("Turned");
-            VehicleMaxSpeedHolder = m_VehicleMaxSpeed;
+            m_VehicleMaxSpeed = VehicleMaxSpeedHolder;
         }
-        else if (Vector3.Distance(transform.position, nodes[currentNode].position) < 4.99f)
+        else if (Vector3.Distance(transform.position, nodes[currentNode].position) < VehicleMaxSpeedHolder/10)
         {
             isGoingToTurn = true;
-            VehicleMaxSpeedHolder = m_VehicleMaxSpeed/2;
+            m_VehicleMaxSpeed = VehicleMaxSpeedHolder / 2;
 
             //Debug.Log(Vector3.Distance(transform.position, nodes[currentNode].position));
         }
