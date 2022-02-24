@@ -12,6 +12,10 @@ public class carEngine : MonoBehaviour
     public float Acceleration = 5f;
     public float m_VehicleMaxSpeed = 40f;
 
+    [SerializeField] private float PeopleRangeCheck = 10f;
+    [SerializeField] private float CarsRangeCheck = 10f;
+
+    private float speedOfCar = 0f; 
     private bool isGoingToTurn = false;
     private List<Transform> nodes = new List<Transform>();
     private int currentNode = 0;
@@ -19,13 +23,12 @@ public class carEngine : MonoBehaviour
     private GameObject[] People;
     private GameObject[] Cars;
     private bool isStop = false;
-    private enum GameObjectsToCollide
+    private bool turned = false;
+    private enum GameObjectsToCheck
     {
         People,
         Cars
     }
-    [SerializeField]float maxPeopleRange = 100f;
-    [SerializeField]float maxCarsRange = 100f;
     void Start()
     {
         Transform[] pathtransform = path.GetComponentsInChildren<Transform>();
@@ -39,6 +42,7 @@ public class carEngine : MonoBehaviour
 
     void FixedUpdate()
     {
+        speedOfCar = this.GetComponent<Rigidbody>().velocity.sqrMagnitude;
         //wheels of car 
         ApplySteer();
         
@@ -61,22 +65,25 @@ public class carEngine : MonoBehaviour
 
     private void CheckCarsAndPeople()
     {
-        if (checkobjects(GameObjectsToCollide.Cars) || checkobjects(GameObjectsToCollide.People))
+        if (checkobjects(GameObjectsToCheck.Cars) || checkobjects(GameObjectsToCheck.People))
             isStop = true;
         else
             isStop = false;
     }
 
-    private bool checkobjects(GameObjectsToCollide objecttype)
+    private bool checkobjects(GameObjectsToCheck objecttype)
     {
         GameObject[] Objectstocheck;
+        float rangecheck = 0f;
         switch (objecttype)
-        {   
-            case GameObjectsToCollide.People:
+        {
+            case GameObjectsToCheck.People:
                 Objectstocheck = People;
+                rangecheck = PeopleRangeCheck;
                 break;
-            case GameObjectsToCollide.Cars:
+            case GameObjectsToCheck.Cars:
                 Objectstocheck = Cars;
+                rangecheck = CarsRangeCheck;
                 break;
             default:
                 Objectstocheck = new GameObject[0];
@@ -88,68 +95,25 @@ public class carEngine : MonoBehaviour
             if (Gameobj == this.gameObject)
                 continue;
             //Debug.Log(Vector3.Distance(transform.position, Gameobj.transform.position) + " at: " + Gameobj.name);
-            if (Vector3.Distance(transform.position, Gameobj.transform.position) <= maxPeopleRange)
+            if (Vector3.Distance(transform.position, Gameobj.transform.position) <= rangecheck)
             {
                 Vector3 directionToGo = (nodes[currentNode].transform.position - transform.position);
                 Vector3 directionToTarget = (Gameobj.transform.position - transform.position);
                 float angle = Vector3.Angle(directionToGo, directionToTarget);
                 float distance = directionToTarget.magnitude;
-                float maxangle = getangle(distance);
                 //Debug.Log(angle + " at: " + Gameobj.name);
-                if (Mathf.Abs(angle) < maxangle)
+                if (Mathf.Abs(angle) < getangle(distance, objecttype))
                     return true;
             }
         }
         return false;
     }
-
-    private float getangle(float distance)
+    private float getangle(float distance, GameObjectsToCheck objecttype)
     {
-        //distance is needed cuz angle will be obviusly bigger if object is almsot next to us
-        return 15;
+        if (isGoingToTurn && objecttype == GameObjectsToCheck.Cars)
+            return 1200/distance;
+        return 140 / distance;
     }
-
-    private bool checkpeople()
-    {
-        foreach (var person in People)
-        {
-            if (Vector3.Distance(transform.position, person.transform.position) <= maxPeopleRange)
-            {
-                Vector3 directionToGo = (nodes[currentNode].transform.position - transform.position);
-                Vector3 directionToTarget = (person.transform.position - transform.position);
-                float angle = Vector3.Angle(directionToGo, directionToTarget);
-                float distance = directionToTarget.magnitude;
-                float maxangle = getangle(distance);
-                //Debug.Log(angle);
-                if (Mathf.Abs(angle) < maxangle)
-                    return true;
-            }
-        }
-        return false;
-    }
-
-    private bool checkcars()
-    {
-        foreach (var car in Cars)
-        {
-            if (car == this.gameObject)
-                continue;
-            if (Vector3.Distance(transform.position, car.transform.position) < maxCarsRange)
-            {
-
-                Vector3 directionToGo = (nodes[currentNode].transform.position - transform.position);
-                Vector3 directionToTarget = (car.transform.position - transform.position);
-                float angle = Vector3.Angle(directionToGo, directionToTarget);
-                float distance = directionToTarget.magnitude;
-                float maxangle = getangle(distance);
-                // Debug.Log(angle);
-                if (Mathf.Abs(angle) < maxangle)
-                    return true;
-            }
-        }
-        return false;
-    }
-
     private void Brake()
     {
         //Debug.Log("Brake");
@@ -168,26 +132,33 @@ public class carEngine : MonoBehaviour
     private void Drive()
     {
        // Debug.Log("Brake");
-        float speed = this.GetComponent<Rigidbody>().velocity.sqrMagnitude;
-        if (speed < m_VehicleMaxSpeed)
+
+        if (speedOfCar < m_VehicleMaxSpeed)
         {
             speedUP();
         }
-        else if (speed > m_VehicleMaxSpeed && isGoingToTurn)
+        else if (speedOfCar > m_VehicleMaxSpeed && isGoingToTurn)
         {
-            slowDown(5);
+            slowDown(2);
         }
         //Debug.Log(speed);
     }
 
     private void slowDown(int FramesToStop)
-    {
+    {   
+        //the 20 is hardcoded, it s a num which help car stay in the path
+        if(isGoingToTurn)
+            this.transform.GetComponent<Rigidbody>().drag = speedOfCar / 30;
         LeftWheel.motorTorque -= LeftWheel.motorTorque  > 0 ? Acceleration/ FramesToStop : 0;
         RightWheel.motorTorque -= RightWheel.motorTorque > 0 ? Acceleration/ FramesToStop : 0;
     }
 
     private void speedUP()
     {
+       // Debug.Log(isGoingToTurn);
+        if(!isGoingToTurn)
+            this.transform.GetComponent<Rigidbody>().drag = 0.0f;
+        
         LeftWheel.motorTorque = Acceleration;
         RightWheel.motorTorque = Acceleration;
     }
@@ -202,22 +173,26 @@ public class carEngine : MonoBehaviour
     }
     private void CheckAndGoNextWaypoint()
     {
-        if (Vector3.Distance(transform.position,nodes[currentNode].position) < 1.99f)
+        if (Vector3.Distance(transform.position, nodes[currentNode].position) < 1.99f)
         {
+            //isGoingToTurn = true;
             if (currentNode == nodes.Count - 1)
                 currentNode = 0;
             else
                 currentNode++;
             //Debug.Log("Turned");
             m_VehicleMaxSpeed = VehicleMaxSpeedHolder;
+            turned = true;
         }
-        else if (Vector3.Distance(transform.position, nodes[currentNode].position) < VehicleMaxSpeedHolder/10)
+        else if (Vector3.Distance(transform.position, nodes[currentNode].position) < speedOfCar/10)
         {
             isGoingToTurn = true;
             m_VehicleMaxSpeed = VehicleMaxSpeedHolder / 2;
 
             //Debug.Log(Vector3.Distance(transform.position, nodes[currentNode].position));
         }
+        else if (turned)
+            isGoingToTurn = false;
 
     }
     private List<Transform> getnodes(Transform[] pathtransform)
