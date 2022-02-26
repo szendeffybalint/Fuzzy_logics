@@ -45,10 +45,10 @@ public class carEngine : MonoBehaviour
         speedOfCar = this.GetComponent<Rigidbody>().velocity.sqrMagnitude;
         //wheels of car 
         ApplySteer();
-        
+
         //if needed
         //set the cars speed 
-        CheckAndGoNextWaypoint();
+        CheckAndSetNextWaypoint();
 
         //if needed
         CheckCarsAndPeople();
@@ -116,17 +116,9 @@ public class carEngine : MonoBehaviour
     }
     private void Brake()
     {
+        this.GetComponent<Rigidbody>().velocity = Vector3.zero;
+        this.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
         //Debug.Log("Brake");
-        if (LeftWheel.motorTorque > 0)
-        {
-            slowDown(1);
-        }
-        else
-        {
-            //Debug.Log("stopped");
-            this.GetComponent<Rigidbody>().velocity = Vector3.zero;
-            this.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
-        }
     }
 
     private void Drive()
@@ -171,7 +163,7 @@ public class carEngine : MonoBehaviour
         RightWheel.steerAngle = newSteer;
         
     }
-    private void CheckAndGoNextWaypoint()
+    private void CheckAndSetNextWaypoint()
     {
         if (Vector3.Distance(transform.position, nodes[currentNode].position) < 1.99f)
         {

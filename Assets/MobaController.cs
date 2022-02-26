@@ -6,18 +6,19 @@ using UnityEngine.AI;
 
 public class MobaController : MonoBehaviour
 {
+
     //camera controller
     public Transform moba_player;
     private Vector3 cameraoffset;
 
     [Range(0.01f, 1.0f)]
     public float smoothness = 0.5f;
-    // movement
-    NavMeshAgent agent;
-
     public float rotateSpeedMovement = 0.1f;
+    // movement
+    public Animator Animator;
+    NavMeshAgent agent;
     float rotateVelocity;
-    // Start is called before the first frame update
+
     void Start()
     {
         invoke();
@@ -42,7 +43,18 @@ public class MobaController : MonoBehaviour
         }
         camerafollow();
         move_player();
-        
+        handleAnimation();
+    }
+
+    private void handleAnimation()
+    {
+        //redundant with HumanAIcontroller because it s easier to set different animations liek this
+        float speed = Vector3.Project(agent.desiredVelocity, transform.forward).magnitude;
+        //Debug.Log(speed);
+        if (speed > 0.01f)
+            Animator.SetBool("IsWalking", true);
+        else
+            Animator.SetBool("IsWalking", false);
     }
 
     private void move_player()

@@ -6,6 +6,7 @@ using UnityEngine;
 public class FirstPersonController : MonoBehaviour
 {
     public bool CanMove { get; private set; } = true;
+    public Animator Animator;
 
     [Header("Movement Parameters")]
     [SerializeField] private float WalkSpeed = 3.0f;
@@ -48,9 +49,27 @@ public class FirstPersonController : MonoBehaviour
         {
             HandleMovement();
             HandleMouseLook();
+            HandleAnimation();
             ApplyFinalmoves();
         }
     }
+
+    private void HandleAnimation()
+    {
+        /*
+        if (Input.GetKeyDown(KeyCode.LeftShift))
+            Animator.SetBool("IsRunning", true);
+        else if (Input.GetKeyUp(KeyCode.LeftShift))
+            Animator.SetBool("IsRunning", false);
+        */
+
+        if (CurrentInnput != Vector2.zero)
+            Animator.SetBool("IsWalking", true);
+        else
+            Animator.SetBool("IsWalking", false);
+
+    }
+
     private void HandleMovement()
     {
         CurrentInnput = new Vector2(WalkSpeed * Input.GetAxis("Vertical"), WalkSpeed * Input.GetAxis("Horizontal"));
@@ -69,9 +88,8 @@ public class FirstPersonController : MonoBehaviour
     private void ApplyFinalmoves()
     {
         if (!charactercontroller.isGrounded)
-        {
             MoveDirection.y -= Gravity * Time.deltaTime;
-        }
+
         charactercontroller.Move(MoveDirection * Time.deltaTime);
     }
 }
