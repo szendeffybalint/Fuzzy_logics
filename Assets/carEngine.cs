@@ -13,6 +13,7 @@ public class carEngine : MonoBehaviour
     public float m_VehicleMaxSpeed = 40f;
     public bool isGoingToTurn = false;
     public bool isStop = false;
+    public bool isPedestrianWannaCross = false;
 
     [SerializeField] private float PeopleRangeCheck = 10f;
     [SerializeField] private float CarsRangeCheck = 7f;

@@ -44,6 +44,7 @@ public class HumanAIController : MonoBehaviour
 
         handleAnimation();
     }
+
     private bool CheckCarsAndStop()
     {
         
@@ -59,9 +60,9 @@ public class HumanAIController : MonoBehaviour
                     Vector3 directionToTarget = (car.transform.position - transform.position);
                     float angle = Vector3.Angle(directionToGo, directionToTarget);
                     //Debug.Log(angle + " at: " + Gameobj.name);
-                    if(Mathf.Abs(angle) < 10)
+                    if (Mathf.Abs(angle) < 90 && !car.GetComponent<carEngine>().isStop )
                         return true;
-                    else if (Mathf.Abs(angle) < 90 && !car.GetComponent<carEngine>().isStop )
+                    else if (Mathf.Abs(angle) < 5)
                         return true;
                 }
             }
@@ -72,7 +73,9 @@ public class HumanAIController : MonoBehaviour
     {
         foreach (var crosswalk in CrossWalks)
         {
-            if (Vector3.Distance(transform.position, crosswalk.transform.position) <= 5f)
+            Vector3 directionOfCrossWalk = (crosswalk.transform.position - transform.position);
+            if (Vector3.Distance(transform.position, crosswalk.transform.position) <= 5f &&
+                Vector3.Angle(agent.velocity, directionOfCrossWalk) < 20)
                 return true;
         }
         return false;
