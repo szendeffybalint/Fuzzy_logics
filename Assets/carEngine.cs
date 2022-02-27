@@ -6,23 +6,22 @@ using UnityEngine;
 public class carEngine : MonoBehaviour
 {
     public Transform path;
-    public float maxSteerAngle = 45f;
+    public float maxSteerAngle = 60f;
     public WheelCollider LeftWheel;
     public WheelCollider RightWheel;
     public float Acceleration = 5f;
     public float m_VehicleMaxSpeed = 40f;
+    public bool isGoingToTurn = false;
+    public bool isStop = false;
 
     [SerializeField] private float PeopleRangeCheck = 10f;
-    [SerializeField] private float CarsRangeCheck = 10f;
-
+    [SerializeField] private float CarsRangeCheck = 7f;
     private float speedOfCar = 0f; 
-    private bool isGoingToTurn = false;
     private List<Transform> nodes = new List<Transform>();
     private int currentNode = 0;
     private float VehicleMaxSpeedHolder;
     private GameObject[] People;
     private GameObject[] Cars;
-    private bool isStop = false;
     private bool turned = false;
     private enum GameObjectsToCheck
     {
@@ -43,11 +42,10 @@ public class carEngine : MonoBehaviour
     void FixedUpdate()
     {
         speedOfCar = this.GetComponent<Rigidbody>().velocity.sqrMagnitude;
-        //wheels of car 
+        //set wheels angle  
         ApplySteer();
 
         //if needed
-        //set the cars speed 
         CheckAndSetNextWaypoint();
 
         //if needed
@@ -60,7 +58,6 @@ public class carEngine : MonoBehaviour
         //drive with the speed
         if(!isStop)
             Drive();
-        //
     }
 
     private void CheckCarsAndPeople()
@@ -110,10 +107,24 @@ public class carEngine : MonoBehaviour
     }
     private float getangle(float distance, GameObjectsToCheck objecttype)
     {
+        //angle = divideWithMinMax(30, 120, 1200, distance);
         if (isGoingToTurn && objecttype == GameObjectsToCheck.Cars)
-            return 1200/distance;
-        return 140 / distance;
+            return divideWithMinMax(30, 90, 1200, distance);
+
+        return divideWithMinMax(15, 45, 120, distance);
     }
+
+    private float divideWithMinMax(int min, int max, int num, float divider)
+    {
+
+        float divided = num / divider;
+        if (divided > 90)
+            return 0;
+        divided = divided > max ? max : divided;
+        divided = divided < min ? min : divided;
+        return divided;
+    }
+
     private void Brake()
     {
         this.GetComponent<Rigidbody>().velocity = Vector3.zero;
@@ -126,23 +137,24 @@ public class carEngine : MonoBehaviour
        // Debug.Log("Brake");
 
         if (speedOfCar < m_VehicleMaxSpeed)
-        {
             speedUP();
-        }
-        else if (speedOfCar > m_VehicleMaxSpeed && isGoingToTurn)
+
+        else if (speedOfCar > m_VehicleMaxSpeed)
+            slowDown();
+
+        else
         {
-            slowDown(2);
+            LeftWheel.motorTorque -= 0f;
+            RightWheel.motorTorque -= 0f;
         }
         //Debug.Log(speed);
     }
 
-    private void slowDown(int FramesToStop)
-    {   
-        //the 20 is hardcoded, it s a num which help car stay in the path
-        if(isGoingToTurn)
-            this.transform.GetComponent<Rigidbody>().drag = speedOfCar / 30;
-        LeftWheel.motorTorque -= LeftWheel.motorTorque  > 0 ? Acceleration/ FramesToStop : 0;
-        RightWheel.motorTorque -= RightWheel.motorTorque > 0 ? Acceleration/ FramesToStop : 0;
+    private void slowDown()
+    {   if(isGoingToTurn)
+            this.transform.GetComponent<Rigidbody>().drag = speedOfCar / 25.0f;
+        LeftWheel.motorTorque = 0;
+        RightWheel.motorTorque = 0;
     }
 
     private void speedUP()
@@ -150,7 +162,8 @@ public class carEngine : MonoBehaviour
        // Debug.Log(isGoingToTurn);
         if(!isGoingToTurn)
             this.transform.GetComponent<Rigidbody>().drag = 0.0f;
-        
+        else
+            this.transform.GetComponent<Rigidbody>().drag = speedOfCar / 25.0f;
         LeftWheel.motorTorque = Acceleration;
         RightWheel.motorTorque = Acceleration;
     }
@@ -165,7 +178,7 @@ public class carEngine : MonoBehaviour
     }
     private void CheckAndSetNextWaypoint()
     {
-        if (Vector3.Distance(transform.position, nodes[currentNode].position) < 1.99f)
+        if (Vector3.Distance(transform.position, nodes[currentNode].position) < 2.0f)
         {
             //isGoingToTurn = true;
             if (currentNode == nodes.Count - 1)
@@ -176,7 +189,7 @@ public class carEngine : MonoBehaviour
             m_VehicleMaxSpeed = VehicleMaxSpeedHolder;
             turned = true;
         }
-        else if (Vector3.Distance(transform.position, nodes[currentNode].position) < speedOfCar/10)
+        else if (Vector3.Distance(transform.position, nodes[currentNode].position) < speedOfCar / 25)
         {
             isGoingToTurn = true;
             m_VehicleMaxSpeed = VehicleMaxSpeedHolder / 2;
@@ -184,8 +197,10 @@ public class carEngine : MonoBehaviour
             //Debug.Log(Vector3.Distance(transform.position, nodes[currentNode].position));
         }
         else if (turned)
+        {
             isGoingToTurn = false;
-
+            turned = false;
+        }
     }
     private List<Transform> getnodes(Transform[] pathtransform)
     {

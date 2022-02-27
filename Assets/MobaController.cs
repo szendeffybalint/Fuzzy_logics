@@ -38,18 +38,20 @@ public class MobaController : MonoBehaviour
     {
         //fps controller volt
         if (!Cursor.visible)
-        {
             invoke();
-        }
+
         camerafollow();
         move_player();
-        handleAnimation();
+        if (Vector3.Distance(transform.position, agent.destination) < 0.49f)
+            agent.isStopped = true;
+        float speed = Vector3.Project(agent.desiredVelocity, transform.forward).magnitude;
+        handleAnimation(speed);
     }
 
-    private void handleAnimation()
+    private void handleAnimation(float speed)
     {
         //redundant with HumanAIcontroller because it s easier to set different animations liek this
-        float speed = Vector3.Project(agent.desiredVelocity, transform.forward).magnitude;
+
         //Debug.Log(speed);
         if (speed > 0.01f)
             Animator.SetBool("IsWalking", true);
@@ -66,7 +68,7 @@ public class MobaController : MonoBehaviour
             {
                 //Move
                 agent.SetDestination(rayhit.point);
-
+                agent.isStopped = false;
                 //rotate
                 Quaternion rotationToLookAt = Quaternion.LookRotation(rayhit.point - transform.position);
 
