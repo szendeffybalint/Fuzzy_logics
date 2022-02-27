@@ -30,6 +30,7 @@ public class ControllerSwitcher : MonoBehaviour
 
     private void turninFPS()
     {
+        this.gameObject.transform.position = new Vector3(this.transform.position.x, this.transform.position.y+1, this.transform.position.z);
         m_gameobject.GetComponent<NavMeshAgent>().enabled = false;
         m_gameobject.GetComponent<MobaController>().enabled = false;
         //m_gameobject.GetComponent<CapsuleCollider>().enabled = false;
