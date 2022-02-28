@@ -19,6 +19,8 @@ public class HumanAIController : MonoBehaviour
     private List<Transform> nodes = new List<Transform>();
     private Transform[] CrossWalks; 
     private int currentNode = 0;
+    private float maxWaitTime = 15f;
+    private float timeOfWait = 0f;
 
     void Start()
     {
@@ -56,13 +58,20 @@ public class HumanAIController : MonoBehaviour
                 //Debug.Log(Vector3.Distance(transform.position, Gameobj.transform.position) + " at: " + Gameobj.name);
                 if (Vector3.Distance(transform.position, car.transform.position) <= 6f)
                 {
+                    if (isStop)
+                        timeOfWait += Time.deltaTime;
+                    else 
+                        timeOfWait = 0f;
+
                     Vector3 directionToGo = agent.velocity;
                     Vector3 directionToTarget = (car.transform.position - transform.position);
                     float angle = Vector3.Angle(directionToGo, directionToTarget);
                     //Debug.Log(angle + " at: " + Gameobj.name);
                     if (Mathf.Abs(angle) < 45 && !car.GetComponent<carEngine>().isStop  )
                         return true;
-                    if (car.GetComponent<carEngine>().isStop && angle < 2 )
+                    if (timeOfWait > maxWaitTime)
+                        return false;
+                    if (car.GetComponent<carEngine>().isStop && angle < 1 )
                         return true;
                 }
             }

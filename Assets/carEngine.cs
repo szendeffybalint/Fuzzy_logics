@@ -120,7 +120,7 @@ public class carEngine : MonoBehaviour
     {
         //angle = divideWithMinMax(30, 120, 1200, distance);
         if (isGoingToTurn && objecttype == GameObjectsToCheck.Cars)
-            return divideWithMinMax(30, 90, 1200, distance);
+            return divideWithMinMax(30, 75, 1200, distance);
 
         return divideWithMinMax(15, 45, 120, distance);
     }
