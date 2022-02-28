@@ -50,9 +50,8 @@ public class MobaController : MonoBehaviour
 
     private void handleAnimation(float speed)
     {
-        //redundant with HumanAIcontroller because it s easier to set different animations liek this
+        //redundant with moba controller because it s easier to set different animations if needed
 
-        //Debug.Log(speed);
         if (speed > 0.01f)
             Animator.SetBool("IsWalking", true);
         else

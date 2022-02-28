@@ -2,21 +2,25 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static Car;
 
-public class carEngine : MonoBehaviour
+
+
+public class carEngine : MonoBehaviour 
 {
+    public Car car;
     public Transform path;
-    public float maxSteerAngle = 60f;
     public WheelCollider LeftWheel;
     public WheelCollider RightWheel;
-    public float Acceleration = 5f;
-    public float m_VehicleMaxSpeed = 40f;
-    public bool isGoingToTurn = false;
+    public cartype Cartype = new cartype();
     public bool isStop = false;
-    public bool isPedestrianWannaCross = false;
+    public bool isGoingToTurn = false;
 
-    [SerializeField] private float PeopleRangeCheck = 10f;
-    [SerializeField] private float CarsRangeCheck = 7f;
+    private float m_maxSteerAngle;
+    private float m_Acceleration;
+    private float m_VehicleMaxSpeed;
+    private float m_PeopleRangeCheck;
+    private float m_CarsRangeCheck;
     private float speedOfCar = 0f; 
     private List<Transform> nodes = new List<Transform>();
     private int currentNode = 0;
@@ -31,9 +35,16 @@ public class carEngine : MonoBehaviour
     }
     void Start()
     {
+        car = new Car(Cartype);
+
+        m_VehicleMaxSpeed = car.VehicleMaxSpeed;
+        m_Acceleration = car.Acceleration;
+        m_maxSteerAngle = car.maxSteerAngle;
+        m_CarsRangeCheck = car.CarsRangeCheck;
+        m_PeopleRangeCheck = car.PeopleRangeCheck;
+
         Transform[] pathtransform = path.GetComponentsInChildren<Transform>();
         nodes = getnodes(pathtransform);
-        Acceleration = Acceleration * 100;
         VehicleMaxSpeedHolder = m_VehicleMaxSpeed;
         People = GameObject.FindGameObjectsWithTag("Person");
         Cars = GameObject.FindGameObjectsWithTag("Car");
@@ -52,7 +63,7 @@ public class carEngine : MonoBehaviour
         //if needed
         CheckCarsAndPeople();
 
-        //if ppl / car 
+        //brake on other gameobject
         if (isStop)
             Brake();
 
@@ -77,11 +88,11 @@ public class carEngine : MonoBehaviour
         {
             case GameObjectsToCheck.People:
                 Objectstocheck = People;
-                rangecheck = PeopleRangeCheck;
+                rangecheck = m_PeopleRangeCheck;
                 break;
             case GameObjectsToCheck.Cars:
                 Objectstocheck = Cars;
-                rangecheck = CarsRangeCheck;
+                rangecheck = m_CarsRangeCheck;
                 break;
             default:
                 Objectstocheck = new GameObject[0];
@@ -89,10 +100,9 @@ public class carEngine : MonoBehaviour
         }
         foreach (var Gameobj in Objectstocheck)
         {
-            
+
             if (Gameobj == this.gameObject)
                 continue;
-            //Debug.Log(Vector3.Distance(transform.position, Gameobj.transform.position) + " at: " + Gameobj.name);
             if (Vector3.Distance(transform.position, Gameobj.transform.position) <= rangecheck)
             {
                 Vector3 directionToGo = (nodes[currentNode].transform.position - transform.position);
@@ -100,7 +110,7 @@ public class carEngine : MonoBehaviour
                 float angle = Vector3.Angle(directionToGo, directionToTarget);
                 float distance = directionToTarget.magnitude;
                 //Debug.Log(angle + " at: " + Gameobj.name);
-                if (Mathf.Abs(angle) < getangle(distance, objecttype))
+                if (Mathf.Abs(angle) < getangle(distance, objecttype) || distance < 1.5f)
                     return true;
             }
         }
@@ -135,8 +145,6 @@ public class carEngine : MonoBehaviour
 
     private void Drive()
     {
-       // Debug.Log("Brake");
-
         if (speedOfCar < m_VehicleMaxSpeed)
             speedUP();
 
@@ -160,19 +168,18 @@ public class carEngine : MonoBehaviour
 
     private void speedUP()
     {
-       // Debug.Log(isGoingToTurn);
-        if(!isGoingToTurn)
-            this.transform.GetComponent<Rigidbody>().drag = 0.0f;
-        else
+        if(isGoingToTurn)
             this.transform.GetComponent<Rigidbody>().drag = speedOfCar / 25.0f;
-        LeftWheel.motorTorque = Acceleration;
-        RightWheel.motorTorque = Acceleration;
+        else
+            this.transform.GetComponent<Rigidbody>().drag = 0.0f;
+        LeftWheel.motorTorque = m_Acceleration;
+        RightWheel.motorTorque = m_Acceleration;
     }
 
     private void ApplySteer()
     {
         Vector3 relativeVector = transform.InverseTransformPoint(nodes[currentNode].position);
-        float newSteer = (relativeVector.x / relativeVector.magnitude)*maxSteerAngle;
+        float newSteer = (relativeVector.x / relativeVector.magnitude)*m_maxSteerAngle;
         LeftWheel.steerAngle = newSteer;
         RightWheel.steerAngle = newSteer;
         
@@ -181,7 +188,6 @@ public class carEngine : MonoBehaviour
     {
         if (Vector3.Distance(transform.position, nodes[currentNode].position) < 2.0f)
         {
-            //isGoingToTurn = true;
             if (currentNode == nodes.Count - 1)
                 currentNode = 0;
             else
@@ -194,8 +200,6 @@ public class carEngine : MonoBehaviour
         {
             isGoingToTurn = true;
             m_VehicleMaxSpeed = VehicleMaxSpeedHolder / 2;
-
-            //Debug.Log(Vector3.Distance(transform.position, nodes[currentNode].position));
         }
         else if (turned)
         {
@@ -212,5 +216,4 @@ public class carEngine : MonoBehaviour
 
         return nodes;
     }
-
 }

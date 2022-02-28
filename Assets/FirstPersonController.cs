@@ -25,7 +25,6 @@ public class FirstPersonController : MonoBehaviour
     private Vector2 CurrentInnput;
 
     private float RotationX = 0;
-    // Start is called before the first frame update
     void Awake()
     {
         invoke();
@@ -39,7 +38,6 @@ public class FirstPersonController : MonoBehaviour
         Cursor.visible = false;
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (Cursor.visible)
@@ -56,12 +54,6 @@ public class FirstPersonController : MonoBehaviour
 
     private void HandleAnimation()
     {
-        /*
-        if (Input.GetKeyDown(KeyCode.LeftShift))
-            Animator.SetBool("IsRunning", true);
-        else if (Input.GetKeyUp(KeyCode.LeftShift))
-            Animator.SetBool("IsRunning", false);
-        */
 
         if (CurrentInnput != Vector2.zero)
             Animator.SetBool("IsWalking", true);

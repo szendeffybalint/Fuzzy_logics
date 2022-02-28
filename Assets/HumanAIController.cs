@@ -36,7 +36,7 @@ public class HumanAIController : MonoBehaviour
         isAtCrossWalk= IsAtCrossWalk();
         speed = Vector3.Project(agent.desiredVelocity, transform.forward).magnitude;
         CheckAndGoNextWaypoint();
-        isStop = CheckCarsAndStop();
+        isStop = CheckCars();
         if (isStop)
             agent.velocity = Vector3.zero;
         else if (speed < 0.01f)
@@ -45,7 +45,7 @@ public class HumanAIController : MonoBehaviour
         handleAnimation();
     }
 
-    private bool CheckCarsAndStop()
+    private bool CheckCars()
     {
         
         if (isAtCrossWalk)
@@ -60,9 +60,9 @@ public class HumanAIController : MonoBehaviour
                     Vector3 directionToTarget = (car.transform.position - transform.position);
                     float angle = Vector3.Angle(directionToGo, directionToTarget);
                     //Debug.Log(angle + " at: " + Gameobj.name);
-                    if (Mathf.Abs(angle) < 90 && !car.GetComponent<carEngine>().isStop )
+                    if (Mathf.Abs(angle) < 45 && !car.GetComponent<carEngine>().isStop  )
                         return true;
-                    else if (Mathf.Abs(angle) < 5)
+                    if (car.GetComponent<carEngine>().isStop && angle < 2 )
                         return true;
                 }
             }
@@ -73,9 +73,8 @@ public class HumanAIController : MonoBehaviour
     {
         foreach (var crosswalk in CrossWalks)
         {
-            Vector3 directionOfCrossWalk = (crosswalk.transform.position - transform.position);
-            if (Vector3.Distance(transform.position, crosswalk.transform.position) <= 5f &&
-                Vector3.Angle(agent.velocity, directionOfCrossWalk) < 20)
+            //hardcoded because all of the crosswalks are 2f 'big'
+            if (Vector3.Distance(transform.position, crosswalk.transform.position) <= 2.5f )
                 return true;
         }
         return false;
@@ -122,9 +121,8 @@ public class HumanAIController : MonoBehaviour
     }
     private void handleAnimation()
     {
-        //redundant with moba controller because it s easier to set different animations liek this
+        //redundant with other controllers because it s easier to set different animations if needed
 
-        //Debug.Log(speed);
         if (speed > 0.01f && !isStop)
             Animator.SetBool("IsWalking", true);
         else
